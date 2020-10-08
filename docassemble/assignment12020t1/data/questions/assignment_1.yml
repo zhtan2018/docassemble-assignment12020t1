@@ -1,0 +1,329 @@
+# ASSIGNMENT 1
+# You will be implementing the Legal Aid Bureau's interview to determine
+# whether an applicant is eligible for legal aid. 
+# The total score that can be awarded for this assignment is 20.
+# The reference interview is found here:
+# https://guided.page/interview?i=docassemble.playground3%3Alab.yml#page1
+# Resources are found here:
+# https://lab.mlaw.gov.sg/legal-services/taking-the-means-test/
+# https://sso.agc.gov.sg/SL/LAAA1995-RG1#Sc1-
+---
+# MODIFY THIS BLOCK
+# Please fill in the relevant information.
+metadata:
+  title: |
+    Means Test Interview
+  short title: |
+    Legal Aid Bureau Means Test
+  description: |
+    This means test is to determine whether an applicant qualifies for legal aid.
+  authors:
+    - name: Tan Zay Hua 
+      organization: COR-LAW-2215 Digital Intelligence for Lawyers
+  revision_date: 2020-10-07
+---
+modules:
+  - docassemble.base.core
+  - docassemble.base.util
+---
+sections:
+  - Introduction
+  - Personal Information:
+    - Property
+    - Age and Savings
+    - Other Details
+  - Per Capita Monthly Household Income
+  - Results
+---
+features:
+  navigation: True
+  default date min: "1900-01-01"
+---
+interview help:
+  label: More Info
+  heading: More information about the Means Test
+  content: |
+    The Means Test assesses your financial circumstances to determine if you have limited means.
+
+    During the Means Test, you must make full and frank disclosure of your means. Failure to do so is a criminal offence punishable by a fine of up to $5,000 or with imprisonment of up to 6 months, or both.
+
+    If you pass the Means Test, then you will be given an appointment for Statement Taking.
+---
+images:
+  legal aid bureau logo: lab-logo.png
+---
+# DO NOT MODIFY THIS BLOCK. SCORE: 5
+# Implement a check_nric function in a module file called validation.py.
+# It should check for (1) correct format and (2) that it is a valid NRIC.
+# Use a regular expression to test for the correct format.
+# Implement the checksum algorithm to determine whether the NRIC is valid.
+# The NRIC checksum algorithm can be found on:
+# http://www.ngiam.net/NRIC/ or Wikipedia
+# Test your function using data from: https://samliew.com/nric-generator
+modules:
+  .validation
+---
+# DO NOT MODIFY THIS BLOCK
+# This is your objects block.
+# Individual is used for the applicant.
+# DAList is used for household_incomes.
+objects:
+  applicant: Individual
+  household_members: DAList.using(object_type=Individual, there_is_another=False)
+---
+# MODIFY THIS BLOCK (BUT DO NOT MOVE IT). SCORE: 5
+# Use this block to control the interview logic.
+# Include this line somewhere in your code: 
+#   household_members.append(applicant)
+# This line of code adds the applicant to the household_members DAList.
+# This ensures that the applicant appears in the household_members.table.
+mandatory: True
+code: |
+  error = ''
+  ready_to_proceed
+  if own_property == True:
+    if more_than_one_property == True:
+      error = 'You must not own any other property besides your place of residence.'
+      non_eligible
+    else:
+      if reside_property == False:
+        error = 'You must not own any other property besides your place of residence.'
+        non_eligible
+    if value_property > 13000:
+      error = 'The Annual Value of the place of residence owned by you has exceeded the limit. The Annual Value must be $13,000 or lower.'
+      non_eligible
+  if ((applicant.age_in_years() >= 60) and (applicant.total_savings > 40000)):
+    error = 'Your total savings and investments has exceeded the prescribed limit. Applicants aged 60 and above are allowed to have savings and non-CPF investments of $40,000 or lower.'
+    non_eligible
+  if ((applicant.age_in_years() < 60) and (applicant.total_savings > 10000)):
+    error = 'Your total savings and investments have exceeded the prescribed limit. Applicants younger than 60 years old are allowed to have savings and non-CPF investments of $10,000 or lower.'
+    non_eligible
+  applicant.birthdate
+  applicant.total_savings
+  applicant.name.first
+  applicant.name.last
+  applicant.nric
+  applicant.income
+  applicant.address.address
+  applicant.address.unit
+  applicant.address.zip
+  applicant.address.country
+  applicant.nric = applicant.nric.upper()
+  
+  household_members.clear()
+  household_members.append(applicant)
+  household_members.gathered = True
+---
+# DO NOT MODIFY THIS BLOCK OR MOVE IT
+mandatory: True
+code: |
+  if household_members.there_are_any:
+    review_household_members
+---
+# MODIFY THIS BLOCK (BUT DO NOT MOVE IT). SCORE: 5
+# Use this block to write code that calculates the average PCHI
+mandatory: True
+code: |
+  total_household_income = 0
+  for x in range (0, len(household_members)):
+    total_household_income = total_household_income + household_members[x].income
+  
+  if len(household_members) >= 1:
+    pchi = total_household_income / (len(household_members)*12)  
+    if pchi > 950:
+      pchi_screen
+      error = 'Your average Per Capita Gross Monthly Household Income (PCHI) has exceeded the prescribed limit. The average PCHI must be $950 or lower for the last 12 months prior to the application.'
+      non_eligible
+    else: 
+      pchi_screen
+      yes_eligible
+  else:
+    error = 'You have deleted your personal information. Please click on the restart button below to restart the interview.'
+    non_eligible
+---
+# DO NOT MODIFY THIS BLOCK
+table: household_members.table
+rows: household_members
+columns: 
+  - Name: row_item
+  - Birthdate: row_item.birthdate
+  - Income: row_item.income
+edit:
+  - name.first
+---
+# DO NOT MODIFY THIS BLOCK
+question: | 
+  Please add all other household members.
+subquestion: |
+  A household member is any person residing with you and related by:
+  
+  1. blood
+  2. marriage; or
+  3. adoption.
+  
+  Press continue when you have added all household members.
+  
+  ${household_members.table}
+
+  ${household_members.add_action() }
+  
+field: review_household_members
+---
+# DO NOT MODIFY THIS BLOCK
+question: |
+  Information about your ${ordinal(i)} household member:
+fields:
+  - First Name: household_members[i].name.first
+  - Last Name: household_members[i].name.last
+  - Birthdate: household_members[i].birthdate
+    datatype: date
+  - "This person's total income in past 12 months": household_members[i].income
+    datatype: currency
+    min: 0
+    default: 0
+---
+# IMPLEMENT ALL YOUR QUESTION BLOCKS.
+# Implement all the question blocks correctly. Score 3
+# Improving the usability / user experience. Score 2
+question: |
+  This is the Legal Aid Bureau's Means Test Interview.
+subquestion: |
+  Feel free to
+  [read more](https://lab.mlaw.gov.sg/legal-services/taking-the-means-test/)
+  about this interview before proceeding.
+field: ready_to_proceed
+right: |
+  [FILE lab-logo.png, 60%] [BR]
+section: Introduction
+---
+question: |
+  Please provide your property details below.
+fields:
+  - Do you own any property?: own_property
+    datatype: yesnoradio
+right: |
+  [FILE lab-logo.png, 60%] [BR]
+section: Property
+---
+question: |
+  Please provide your property details below. [BR]
+subquestion: |
+  Click on the green text below for a detailed explanation of the interview question fields.
+fields:
+  - Do you own more than one property?: more_than_one_property
+    datatype: yesnoradio
+    help: |
+      You are an owner of a property if you are:
+      (a)	a purchaser of any property sold under Part IV or IVB of the Housing and Development Act (Cap. 129); and
+      (b)	a purchaser of any property sold under an executive condominium scheme within the meaning of section 2(1) of the Executive Condominium Housing Scheme Act (Cap. 99A).
+  - Do you currently reside in this property?: reside_property
+    datatype: yesnoradio
+    help: |
+      Your place of residence refers to the address specified on your identity card on the date of the application.
+    show if:
+      variable: more_than_one_property
+      is: False
+  - What is the annual value of your residential property?: value_property
+    datatype: currency
+    min: 0
+    help: |
+      The annual value refers to the gross amount at which the same can reasonably be expected to be let from year to year, the landlord paying the expenses of repair, insurance, maintenance or upkeep and all taxes (other than goods and services tax).
+    show if:
+      variable: reside_property
+      is: True
+right: |
+  [FILE lab-logo.png, 60%] [BR]
+section: Property
+---
+question: |
+  Please provide your details below. 
+subquestion: |
+  Total savings and non-CPF investments are calculated by adding up the value of the following assets that you own in your name:
+      
+    a) Bank accounts savings (personal or joint);
+
+    b) Overall value of shares in your Central Depository (CDP) account; and
+
+    c) Any other financial/investment products with a cash value, such as fixed deposit accounts at financial institutions, and shares, bonds and exchange traded funds aside from those in your CDP account.
+fields:
+  - Enter your birth date: applicant.birthdate
+    datatype: date
+    max: |
+      ${ today() } 
+  - How much total savings and investments do you have?: applicant.total_savings
+    datatype: currency
+    min: 0
+right: |
+  [FILE lab-logo.png, 60%] [BR]
+section: Age and Savings
+---
+question: |
+  Please provide your personal details below.
+subquestion: |
+  Click on the "More Info" button above for a detailed explanation of the income question field.
+under: |
+  Disclaimer: These particulars will be used for the purposes of correspondence with you by the Legal Aid Bureau (if applicable).
+fields:
+  - First Name (as per NRIC): applicant.name.first
+  - Last Name (as per NRIC): applicant.name.last
+  - NRIC: applicant.nric
+    validate: check_nric
+  - Your total income in the past 12 months: applicant.income
+    datatype: currency
+    min: 0
+  - Address: applicant.address.address
+    address autocomplete: True
+  - Unit: applicant.address.unit
+    required: False
+  - Postcode: applicant.address.zip
+    datatype: integer
+  - Country: applicant.address.country
+    code: |
+      countries_list()
+help: |
+      Total income, or “Gross income” refers to the gross wages or salaries before deduction of CPF contributions and personal income tax. For more information, [click here](https://lab.mlaw.gov.sg/legal-services/taking-the-means-test/).
+right: |
+  [FILE lab-logo.png, 60%] [BR]
+section: Other Details
+---
+question: |
+  You have an average Per Capita Monthly Household Income (PCHI) of ${ currency(pchi)}.
+subquestion: |
+  Your total annual household income is ${ currency(total_household_income)}.
+field: pchi_screen
+buttons:
+  - Continue
+back button: True
+back button label: |
+  Go back, I would like to edit my/my household members' income.
+right: |
+  [FILE lab-logo.png, 60%] [BR]
+section: Per Capita Monthly Household Income
+---
+event: non_eligible
+question: |
+  Unfortunately, you do not qualify for Legal Aid.
+subquestion: |
+  ${ error }
+  
+  If you fail the means test but you have certain reasons or information that you think makes your situation different or special, for example if you have a very serious illness and cannot afford legal services as you need to pay for major medical procedures, you may [contact the MinLaw Services Centre for further assistance](https://www.mlaw.gov.sg/about-us/contact-us/).
+buttons: 
+    - Exit: exit
+    - Restart: restart
+right: |
+  [FILE lab-logo.png, 60%] [BR]
+Section: Results
+---
+event: yes_eligible
+question: |
+  You have passed the Means Test. 
+subquestion: |
+  Legal Aid Bureau will be contacting you shortly.
+  
+  Find out more about the Legal Aid application process [here](https://lab.mlaw.gov.sg/legal-services/how-do-i-apply-for-legal-aid/).
+buttons: 
+    - Exit: exit
+    - Restart: restart
+right: |
+  [FILE lab-logo.png, 60%] [BR]
+Section: Results
