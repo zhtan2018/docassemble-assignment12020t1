@@ -83,20 +83,20 @@ code: |
   ready_to_proceed
   if own_property == True:
     if more_than_one_property == True:
-      error = 'You must not own any other property besides your place of residence.'
+      error = 'Applicants are not eligible for legal aid if they own any other property besides their place of residence.'
       non_eligible
     else:
       if reside_property == False:
-        error = 'You must not own any other property besides your place of residence.'
+        error = 'Applicants are not eligible for legal aid if they own any other property besides their place of residence.'
         non_eligible
     if value_property > 13000:
-      error = 'The Annual Value of the place of residence owned by you has exceeded the limit. The Annual Value must be $13,000 or lower.'
+      error = 'The Annual Value of the place of residence owned by you has exceeded the limit of $13,000.'
       non_eligible
   if ((applicant.age_in_years() >= 60) and (applicant.total_savings > 40000)):
-    error = 'Your total savings and investments has exceeded the prescribed limit. Applicants aged 60 and above are allowed to have savings and non-CPF investments of $40,000 or lower.'
+    error = 'Your total savings and investments has exceeded the prescribed limit. Applicants aged 60 and above are not eligible for legal aid if they have savings and non-CPF investments above $40,000.'
     non_eligible
   if ((applicant.age_in_years() < 60) and (applicant.total_savings > 10000)):
-    error = 'Your total savings and investments have exceeded the prescribed limit. Applicants younger than 60 years old are allowed to have savings and non-CPF investments of $10,000 or lower.'
+    error = 'Your total savings and investments have exceeded the prescribed limit. Applicants younger than 60 years old are not eligible for legal aid if they have savings and non-CPF investments above $10,000.'
     non_eligible
   applicant.birthdate
   applicant.total_savings
@@ -316,9 +316,9 @@ Section: Results
 ---
 event: yes_eligible
 question: |
-  You have passed the Means Test. 
+  You qualify for Legal Aid.  
 subquestion: |
-  Legal Aid Bureau will be contacting you shortly.
+  You have passed the Means Test. The Legal Aid Bureau will be contacting you shortly.
   
   Find out more about the Legal Aid application process [here](https://lab.mlaw.gov.sg/legal-services/how-do-i-apply-for-legal-aid/).
 buttons: 
