@@ -20,7 +20,7 @@ metadata:
   authors:
     - name: Tan Zay Hua 
       organization: COR-LAW-2215 Digital Intelligence for Lawyers
-  revision_date: 2020-10-07
+  revision_date: 2020-10-08
 ---
 modules:
   - docassemble.base.core
